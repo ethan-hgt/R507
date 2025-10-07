@@ -2,22 +2,19 @@
 
 namespace App\Controller;
 
+use App\Entity\Contact;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
+use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
 use Symfony\Component\HttpFoundation\Response;
 
 #[AdminDashboard(
     routePath: '/admin',
-    routeName: 'admin',
-    routeOptions: [
-        "requirements" => ['domain' => '%app_base_domain%'],
-        "defaults" => ['domain' => '%app_base_domain%'],
-        "host" => '{domain}',
-    ],
+    routeName: 'admin'
 )]
 class DashboardController extends AbstractDashboardController
 {
@@ -45,5 +42,12 @@ class DashboardController extends AbstractDashboardController
             ->showEntityActionsInlined()
             ->setDefaultSort(['id' => 'DESC'])
             ->setEntityPermission('ROLE_ADMIN');
+    }
+
+    public function configureMenuItems(): iterable
+    {
+        return [
+            MenuItem::linkToCrud('Contacts', 'fas fa-envelope', Contact::class),
+        ];
     }
 }
