@@ -12,12 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 #[AdminDashboard(
     routePath: '/admin',
-    routeName: 'admin',
-    routeOptions: [
-        "requirements" => ['domain' => '%app_base_domain%'],
-        "defaults" => ['domain' => '%app_base_domain%'],
-        "host" => '{domain}',
-    ],
+    routeName: 'admin'
 )]
 class DashboardController extends AbstractDashboardController
 {
