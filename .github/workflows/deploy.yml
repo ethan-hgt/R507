@@ -2,14 +2,14 @@ name: CD Pipeline - Deploy to Production
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ master ]
   workflow_dispatch:
 
 jobs:
   deploy:
     name: Deploy to FTP Server
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master'
     
     steps:
     - name: Checkout code
