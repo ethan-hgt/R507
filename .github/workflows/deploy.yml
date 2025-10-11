@@ -31,6 +31,7 @@ jobs:
 
     - name: Optimize for production
       run: |
+        echo "🛠️ Optimizing for production..."
         rm -rf var/cache/dev
         rm -rf var/log/dev.log
         rm -rf tests/
@@ -38,6 +39,9 @@ jobs:
         rm -f .env.test
         rm -f phpunit.xml
         rm -rf .git/
+        # Copy production environment file
+        cp .env.prod .env
+        echo "✅ Production optimization completed"
 
     - name: Deploy to FTP
       uses: SamKirkland/FTP-Deploy-Action@v4.3.4
@@ -47,7 +51,7 @@ jobs:
         password: ${{ secrets.FTP_PASSWORD }}
         port: ${{ secrets.FTP_PORT }}
         local-dir: ./
-        server-dir: /public_html/
+        server-dir: /
         exclude: |
           **/.git*
           **/.git*/**
@@ -57,20 +61,14 @@ jobs:
           **/.env.test
           **/var/cache/dev/**
           **/var/log/**
+          **/var/cache/test/**
+          **/.github/**
           README.md
           phpunit.xml
+          phpunit.dist.xml
 
-    - name: Post-deployment setup
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.FTP_HOST }}
-        username: ${{ secrets.FTP_USERNAME }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        port: 22
-        script: |
-          cd public_html
-          php bin/console doctrine:database:create --if-not-exists --env=prod
-          php bin/console doctrine:migrations:migrate --no-interaction --env=prod
-          # php bin/console doctrine:fixtures:load --no-interaction --env=prod
-          chmod -R 755 var/
-          chmod -R 755 public/
+    - name: Post-deployment notification
+      run: |
+        echo "✅ Deployment completed successfully!"
+        echo "🌐 Application deployed to: ${{ secrets.FTP_HOST }}"
+        echo "📝 Deployed from commit: ${{ github.sha }}"

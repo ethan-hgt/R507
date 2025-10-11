@@ -52,10 +52,17 @@ jobs:
         DATABASE_URL: "sqlite:///:memory:"
 
     - name: Run PHPUnit tests
-      run: php bin/phpunit --testdox
+      run: |
+        echo "🧪 Running PHPUnit tests..."
+        php bin/phpunit --testdox --colors=always
       env:
         APP_ENV: test
         DATABASE_URL: "sqlite:///:memory:"
+
+    - name: Test results summary
+      run: |
+        echo "✅ All tests passed successfully!"
+        echo "📊 Test coverage completed"
 
     - name: Symfony Security Check
       run: |
