@@ -19,19 +19,10 @@ jobs:
         extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite
 
     - name: Install dependencies
-      run: composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
+      run: composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs --no-scripts
 
     - name: Setup production
-      run: |
-        cp .env.prod .env
-        mkdir -p var/cache var/log
-        touch var/data.db
-        chmod -R 777 var/
-        php bin/console cache:clear --env=prod --no-debug
-        php bin/console cache:warmup --env=prod --no-debug
-        php bin/console doctrine:migrations:migrate --no-interaction --env=prod
-        rm -rf tests/ .env.local .env.test .env.dev
-        rm -rf var/cache/dev var/cache/test
+      run: ./deploy.sh
 
     - name: Deploy to FTP
       uses: SamKirkland/FTP-Deploy-Action@v4.3.4
