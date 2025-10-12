@@ -1,4 +1,4 @@
-name: CD Pipeline - Deploy to Production
+name: Deploy to Production
 
 on:
   push:
@@ -7,9 +7,8 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to FTP Server
+    name: Deploy to FTP
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
     
     steps:
     - name: Checkout code
@@ -21,31 +20,38 @@ jobs:
         php-version: 8.3
         extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite
 
-    - name: Install production dependencies
-      run: composer install --no-dev --optimize-autoloader --no-progress
+    - name: Cache Composer dependencies
+      uses: actions/cache@v3
+      with:
+        path: vendor
+        key: composer-${{ hashFiles('composer.lock') }}
+        
+    - name: Install dependencies
+      run: composer install --no-dev --optimize-autoloader --no-interaction
 
-    - name: Warmup cache
+    - name: Prepare production files
+      run: |
+        cp .env.prod .env
+        mkdir -p var/cache var/log
+        touch var/data.db
+        chmod -R 777 var/
+
+    - name: Clear and warmup cache
       run: |
         php bin/console cache:clear --env=prod --no-debug
         php bin/console cache:warmup --env=prod --no-debug
 
-    - name: Prepare production environment
+    - name: Run database migrations
       run: |
-        mkdir -p var/cache/prod
-        mkdir -p var/log
-        chmod -R 755 var/
         php bin/console doctrine:migrations:migrate --no-interaction --env=prod
 
-    - name: Optimize for production
+    - name: Clean development files
       run: |
-        rm -rf var/cache/dev
-        rm -rf var/log/dev.log
         rm -rf tests/
-        rm -f .env.local
-        rm -f .env.test
-        rm -f phpunit.xml
-        rm -rf .git/
-        cp .env.prod .env
+        rm -f .env.local .env.test .env.dev
+        rm -f phpunit.xml phpunit.dist.xml
+        rm -rf var/cache/dev var/cache/test
+        rm -f composer.json composer.lock composer.phar
 
     - name: Deploy to FTP
       uses: SamKirkland/FTP-Deploy-Action@v4.3.4
@@ -53,27 +59,22 @@ jobs:
         server: ${{ secrets.FTP_HOST }}
         username: ${{ secrets.FTP_USERNAME }}
         password: ${{ secrets.FTP_PASSWORD }}
-        port: ${{ secrets.FTP_PORT }}
+        port: ${{ secrets.FTP_PORT || 21 }}
         protocol: ftp
         local-dir: ./
         server-dir: /
+        dangerous-clean-slate: true
         exclude: |
           **/.git*
-          **/.git*/**
+          **/.github/**
           **/node_modules/**
           **/tests/**
           **/.env.local
           **/.env.test
+          **/.env.dev
           **/var/cache/dev/**
-          **/var/log/**
           **/var/cache/test/**
-          **/.github/**
           README.md
-          phpunit.xml
-          phpunit.dist.xml
-          composer.json
-          composer.lock
-          composer.phar
 
     - name: Post-deployment notification
       run: |
