@@ -1,4 +1,6 @@
 {
+    "name": "ethan/r507-project",
+    "description": "R507 Symfony project for production deployment",
     "type": "project",
     "license": "proprietary",
     "minimum-stability": "dev",
