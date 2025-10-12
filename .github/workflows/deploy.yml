@@ -29,9 +29,15 @@ jobs:
         php bin/console cache:clear --env=prod --no-debug
         php bin/console cache:warmup --env=prod --no-debug
 
+    - name: Prepare production environment
+      run: |
+        mkdir -p var/cache/prod
+        mkdir -p var/log
+        chmod -R 755 var/
+        php bin/console doctrine:migrations:migrate --no-interaction --env=prod
+
     - name: Optimize for production
       run: |
-        echo "🛠️ Optimizing for production..."
         rm -rf var/cache/dev
         rm -rf var/log/dev.log
         rm -rf tests/
@@ -39,9 +45,7 @@ jobs:
         rm -f .env.test
         rm -f phpunit.xml
         rm -rf .git/
-        # Copy production environment file
         cp .env.prod .env
-        echo "✅ Production optimization completed"
 
     - name: Deploy to FTP
       uses: SamKirkland/FTP-Deploy-Action@v4.3.4
@@ -50,6 +54,7 @@ jobs:
         username: ${{ secrets.FTP_USERNAME }}
         password: ${{ secrets.FTP_PASSWORD }}
         port: ${{ secrets.FTP_PORT }}
+        protocol: ftp
         local-dir: ./
         server-dir: /
         exclude: |
@@ -66,9 +71,10 @@ jobs:
           README.md
           phpunit.xml
           phpunit.dist.xml
+          composer.json
+          composer.lock
+          composer.phar
 
     - name: Post-deployment notification
       run: |
-        echo "✅ Deployment completed successfully!"
-        echo "🌐 Application deployed to: ${{ secrets.FTP_HOST }}"
-        echo "📝 Deployed from commit: ${{ github.sha }}"
+        echo "Deployment completed successfully!"
