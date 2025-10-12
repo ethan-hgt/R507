@@ -1,0 +1,74 @@
+name: CD Pipeline - Deploy to Production
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to FTP Server
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.3
+        extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite
+
+    - name: Install production dependencies
+      run: composer install --no-dev --optimize-autoloader --no-progress
+
+    - name: Warmup cache
+      run: |
+        php bin/console cache:clear --env=prod --no-debug
+        php bin/console cache:warmup --env=prod --no-debug
+
+    - name: Optimize for production
+      run: |
+        echo "🛠️ Optimizing for production..."
+        rm -rf var/cache/dev
+        rm -rf var/log/dev.log
+        rm -rf tests/
+        rm -f .env.local
+        rm -f .env.test
+        rm -f phpunit.xml
+        rm -rf .git/
+        # Copy production environment file
+        cp .env.prod .env
+        echo "✅ Production optimization completed"
+
+    - name: Deploy to FTP
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      with:
+        server: ${{ secrets.FTP_HOST }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        port: ${{ secrets.FTP_PORT }}
+        local-dir: ./
+        server-dir: /
+        exclude: |
+          **/.git*
+          **/.git*/**
+          **/node_modules/**
+          **/tests/**
+          **/.env.local
+          **/.env.test
+          **/var/cache/dev/**
+          **/var/log/**
+          **/var/cache/test/**
+          **/.github/**
+          README.md
+          phpunit.xml
+          phpunit.dist.xml
+
+    - name: Post-deployment notification
+      run: |
+        echo "✅ Deployment completed successfully!"
+        echo "🌐 Application deployed to: ${{ secrets.FTP_HOST }}"
+        echo "📝 Deployed from commit: ${{ github.sha }}"
