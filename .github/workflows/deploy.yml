@@ -40,4 +40,5 @@ jobs:
           **/.github/**
           **/node_modules/**
           **/tests/**
+          **/src/DataFixtures/**
           README.md

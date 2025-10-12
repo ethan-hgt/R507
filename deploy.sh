@@ -6,6 +6,11 @@ echo "Setting up production environment..."
 # Copy production env file
 cp .env.prod .env
 
+# Clean up development files FIRST
+rm -rf tests/ .env.local .env.test .env.dev
+rm -rf var/cache/dev var/cache/test
+rm -rf src/DataFixtures/
+
 # Create necessary directories
 mkdir -p var/cache var/log public/bundles
 touch var/data.db
@@ -27,7 +32,6 @@ if [ -f "bin/console" ]; then
 fi
 
 # Clean up development files
-rm -rf tests/ .env.local .env.test .env.dev
-rm -rf var/cache/dev var/cache/test
+rm -rf src/DataFixtures/
 
 echo "Production setup completed!"
